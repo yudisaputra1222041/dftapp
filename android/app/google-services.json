@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "14121843998",
+    "firebase_url": "https://dftapp-18ad0-default-rtdb.firebaseio.com",
+    "project_id": "dftapp-18ad0",
+    "storage_bucket": "dftapp-18ad0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:14121843998:android:b5cad9d4d16550506e5d0f",
+        "android_client_info": {
+          "package_name": "com.dftapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3IJRDwOftLEckTCGZDwR8CB8c2j3Z1MU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
