@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   Animated,
   ScrollView,
-  TextInput, Button,
+  TextInput,
+  Button,
 } from 'react-native';
 import * as Progress from 'react-native-progress';
 import Svg, {Path, Circle, Line} from 'react-native-svg';
@@ -57,7 +58,8 @@ const HomeScreen = ({navigation}) => {
         setData(validatedData);
 
         setAlerts({
-          levelAir: validatedData.WaterLevel < 0 || validatedData.WaterLevel > 20,
+          levelAir:
+            validatedData.WaterLevel < 0 || validatedData.WaterLevel > 20,
           Nutrisi: validatedData.Nutrisi < 0 || validatedData.Nutrisi > 1400,
           pH: validatedData.pH < 0 || validatedData.pH > 14,
         });
@@ -154,12 +156,13 @@ const HistoriScreen = () => {
       const data = snapshot.val();
       if (data) {
         const parsedData = Object.keys(data)
-          .filter(key => data[key]?.id && data[key]?.pumpType && data[key]?.time && data[key]?.description)
+          .filter(key => data[key]?.time) // Pastikan `time` tidak kosong
           .map((key, index) => ({
             nomor: index + 1,
-            waktu: data[key]?.time || 'Tidak tersedia', // Tambahkan default jika null
+            waktu: data[key]?.time || '1970-01-01 00:00:00', // Fallback waktu default
             tipe: data[key]?.pumpType || 'Tidak tersedia',
             keterangan: data[key]?.description || 'Tidak tersedia',
+            nilai: data[key]?.parameterValue || 'Tidak tersedia', // Gunakan `parameterValue` untuk field nilai
           }));
         setHistori(parsedData);
       } else {
@@ -175,26 +178,30 @@ const HistoriScreen = () => {
       alert('Silahkan Isi Rentang Tanggal yang Valid !!!');
       return;
     }
-  
-    // Set waktu awal hari (00:00:00) dan akhir hari (23:59:59)
-    const start = new Date(`${startDate}T00:00:00`);
-    const end = new Date(`${endDate}T23:59:59`);
-  
+
+    // Konversi tanggal awal dan akhir ke waktu epoch (timestamp)
+    const start = new Date(`${startDate}T00:00:00`).getTime(); // Awal hari
+    const end = new Date(`${endDate}T23:59:59`).getTime(); // Akhir hari
+
+    // Filter histori berdasarkan rentang waktu
     const filtered = histori.filter(item => {
-      const itemDate = new Date(item.waktu);
+      // Parsing waktu dari Firebase ke timestamp
+      const itemDate = new Date(item.waktu.replace(' ', 'T')).getTime(); // Ganti spasi dengan 'T'
       return itemDate >= start && itemDate <= end;
     });
-  
+
     setFilteredHistori(filtered);
     setShowTable(true);
+
+    console.log('Filtered Data:', filtered); // Debugging hasil filter
   };
 
-  const handleStartDateConfirm = (date) => {
+  const handleStartDateConfirm = date => {
     setStartDate(date.toISOString().split('T')[0]);
     setStartDatePickerVisible(false);
   };
 
-  const handleEndDateConfirm = (date) => {
+  const handleEndDateConfirm = date => {
     setEndDate(date.toISOString().split('T')[0]);
     setEndDatePickerVisible(false);
   };
@@ -204,7 +211,9 @@ const HistoriScreen = () => {
       <Text style={styles.header}>Histori</Text>
 
       <View style={styles.dateInputContainer}>
-        <TouchableOpacity onPress={() => setStartDatePickerVisible(true)} style={styles.dateInputWrapper}>
+        <TouchableOpacity
+          onPress={() => setStartDatePickerVisible(true)}
+          style={styles.dateInputWrapper}>
           <TextInput
             style={styles.dateInput}
             value={startDate || ''}
@@ -213,7 +222,9 @@ const HistoriScreen = () => {
           />
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => setEndDatePickerVisible(true)} style={styles.dateInputWrapper}>
+        <TouchableOpacity
+          onPress={() => setEndDatePickerVisible(true)}
+          style={styles.dateInputWrapper}>
           <TextInput
             style={styles.dateInput}
             value={endDate || ''}
@@ -246,38 +257,27 @@ const HistoriScreen = () => {
           <View style={styles.tableContainer}>
             <View style={[styles.tableRow, styles.tableHeaderRow]}>
               <Text
-                style={[
-                  styles.tableCell,
-                  styles.tableHeaderCell,
-                  {flex: 1},
-                ]}>
+                style={[styles.tableCell, styles.tableHeaderCell, {flex: 1}]}>
                 No
               </Text>
               <Text
-                style={[
-                  styles.tableCell,
-                  styles.tableHeaderCell,
-                  {flex: 2},
-                ]}>
+                style={[styles.tableCell, styles.tableHeaderCell, {flex: 2}]}>
                 Waktu
               </Text>
               <Text
-                style={[
-                  styles.tableCell,
-                  styles.tableHeaderCell,
-                  {flex: 2},
-                ]}>
+                style={[styles.tableCell, styles.tableHeaderCell, {flex: 2}]}>
                 Komponen
               </Text>
               <Text
-                style={[
-                  styles.tableCell,
-                  styles.tableHeaderCell,
-                  {flex: 2},
-                ]}>
+                style={[styles.tableCell, styles.tableHeaderCell, {flex: 2}]}>
+                Nilai
+              </Text>
+              <Text
+                style={[styles.tableCell, styles.tableHeaderCell, {flex: 2}]}>
                 Ket
               </Text>
             </View>
+
             {filteredHistori.length > 0 ? (
               filteredHistori.map((item, index) => (
                 <View
@@ -289,8 +289,9 @@ const HistoriScreen = () => {
                   <Text style={[styles.tableCell, {flex: 2}]}>
                     {item.waktu}
                   </Text>
+                  <Text style={[styles.tableCell, {flex: 2}]}>{item.tipe}</Text>
                   <Text style={[styles.tableCell, {flex: 2}]}>
-                    {item.tipe}
+                    {item.nilai}
                   </Text>
                   <Text style={[styles.tableCell, {flex: 2}]}>
                     {item.keterangan}
@@ -308,8 +309,6 @@ const HistoriScreen = () => {
     </SafeAreaView>
   );
 };
-
-
 
 // App Component
 const App = () => {
@@ -396,6 +395,7 @@ const IndicatorCard = ({
             showsText
             color={progressColor}
             thickness={8}
+            formatText={() => `${value}`}  // Menampilkan nilai numerik di dalam circle
           />
           <Text style={styles.rangeText}>{`${min} - ${max}`}</Text>
           {showAlert && (
@@ -498,7 +498,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
 
-
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -536,7 +535,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#007BFF',
     borderRadius: 5,
     alignItems: 'center',
-    bottom:10,
+    bottom: 10,
   },
   filterButtonText: {
     color: '#fff',
